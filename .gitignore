@@ -1,0 +1,11 @@
+.DS_Store
+
+.idea
+.vscode
+
+runs
+
+__pycache__
+
+.ipynb_checkpoints
+
