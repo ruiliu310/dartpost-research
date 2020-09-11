@@ -10,11 +10,7 @@ id	text	picture_url	parent_id	root_id	is_marked	tags	createdAt	updatedAt	AuthorI
 689	this image makes me hungry	https://dartmouth-socialplatform.s3.amazonaws.com/funny-game-of-thrones-memes-coverimage.width-800.jpg			f	{food}	2020-09-05 01:25:52.177+00	2020-09-05 01:25:52.188+00	2566	f
 580	Makes you think!	https://dartmouth-socialplatform.s3.amazonaws.com/funny-joke-about-work.jpg			f	{haha,jokes,work}	2020-09-04 15:16:27.255+00	2020-09-05 12:44:34.594+00	2691	f
 108	Talk to me about how Covid has affect the Dow Jones.  I suspect will end the year at least 20%. What do you think?	""			f	"{'"'"}"	2020-09-03 03:14:19.894+00	2020-09-03 03:14:19.905+00	2604	f
-736	"https://www.reddit.com/r/PublicFreakout/comments/icxl5a/man_says_he_will_commit_domestic_terrorism_if/?utm_source=share&utm_medium=ios_app&utm_name=iossmf  
-  
-Our terrorist threat lies within Trump supporters.  
-  
-🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"	""			f	{terror}	2020-09-05 12:54:52.365+00	2020-09-05 12:54:52.383+00	2687	f
+736	"https://www.reddit.com/r/PublicFreakout/comments/icxl5a/man_says_he_will_commit_domestic_terrorism_if/?utm_source=share&utm_medium=ios_app&utm_name=iossmf  Our terrorist threat lies within Trump supporters. 🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️🤦🏼‍♂️"	""			f	{terror}	2020-09-05 12:54:52.365+00	2020-09-05 12:54:52.383+00	2687	f
 758	We have to because of Covid	https://dartmouth-socialplatform.s3.amazonaws.com/coronavirus-meme-1.jpg			f	{Covid,Humor}	2020-09-05 14:27:32.168+00	2020-09-05 14:27:32.184+00	2711	f
 95	""	""			t	"{'"'"}"	2020-09-03 02:31:10.028+00	2020-09-03 02:34:29.992+00	2611	f
 581	The United States can't afford Medicare for all!  We're struggling with debt as it is:  make American debt-free again!	""			f	{nodebt,nomedicareforall}	2020-09-04 15:16:48.659+00	2020-09-05 23:26:46.66+00	2527	f
@@ -25,7 +21,6 @@ Our terrorist threat lies within Trump supporters.
 232	"Trump wants you to go green. His EPA has a great initiative. Let''s all do our part. Check out current Trump Cabinet EPA link: https://www.epa.gov/environmental-topics/greener-living  
 # TrumpGreendeal"	""			f	"{'"'",TrumpGreendeal}"	2020-09-03 17:56:46.211+00	2020-09-03 17:56:49.719+00	2388	f
 113	"With all the focus on COVID is the US what is the likelihood that we will suffer a terrorist attack within our borders? Take a look at this.
-
 https://www.rand.org/blog/2017/06/can-we-predict-where-terrorists-will-strike-next.html
 
 "	""			f	{terrorism,preparedness}	2020-09-03 03:53:10.074+00	2020-09-03 03:53:10.088+00	2618	f
