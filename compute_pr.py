@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-# coding: utf-
+# coding: utf-8
 
 
 from pathlib import Path
-# from joblib import Parallel, delayed
 from multiprocessing import Pool
 import pandas as pd
 import numpy as np
@@ -270,16 +269,16 @@ print(describe_graph(subsubg))
 
 
 attention_window = pd.Timedelta("1 day")
-moment_time = timeline[1]
-pr_alpha = 0.85
-beta_a = 0.5
-beta_b = 0.5
+# moment_time = timeline[1]
+# pr_alpha = 0.85
+# beta_a = 0.5
+# beta_b = 0.5
 
-node_name = "u2337"
-topic = 4
-polarity = 0
+# node_name = "u2337"
+# topic = 4
+# polarity = 0
 
-print(f"{attention_window}, {moment_time}")
+# print(f"{attention_window}, {moment_time}")
 
 
 def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, beta_b, moment_time, attention_window, verbose=False):
@@ -289,6 +288,7 @@ def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, bet
     moment_graph = G.subgraph(moment_nodes).copy()
     if verbose:
         print(f"nodes {len(moment_graph)}, edges: {len(moment_graph.edges)}")
+        print(f"comments {len([n for n in moment_graph if n[0] == 'c'])}")
     moment_graph.nodes[node_name]["time"] = moment_time
 
     # remove edges outside attention window
@@ -296,25 +296,22 @@ def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, bet
     for n in moment_graph:
         if n[0] in ["p", "u"]:
             t = moment_graph.nodes[n]["time"]
-            remove_edges += [e for e in moment_graph.out_edges(n) if not t -
-                             attention_window < moment_graph.edges[e]["time"] <= t]
+            remove_edges += [e for e in moment_graph.out_edges(n) if e[1][0] ==
+                             "v" and not t - attention_window < moment_graph.edges[e]["time"] <= t]
 
     if verbose:
         print(f"remove edges {len(remove_edges)}")
+        print(f"comments {len([n for n in moment_graph if n[0] == 'c'])}")
     moment_graph.remove_edges_from(remove_edges)
     if verbose:
         print(f"nodes {len(moment_graph)}, edges: {len(moment_graph.edges)} <- attention window")
+        print(f"comments {len([n for n in moment_graph if n[0] == 'c'])}")
 
     # for source node node_name only
     moment_graph = moment_graph.subgraph([n for n in moment_graph if nx.has_path(moment_graph, node_name, n)]).copy()
     if verbose:
         print(f"nodes {len(moment_graph)}, edges: {len(moment_graph.edges)} <- path from observer")
-
-    # remove isolated nodes
-    isolates = list(nx.isolates(moment_graph))
-    if node_name in isolates:
-        isolates.remove(node_name)
-    moment_graph.remove_nodes_from(isolates)
+        print(f"comments {len([n for n in moment_graph if n[0] == 'c'])}")
 
     if verbose:
         print(f"nodes {len(moment_graph)}, edges: {len(moment_graph.edges)} <- remove isolates")
@@ -334,8 +331,8 @@ def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, bet
     return moment_graph, pr_value
 
 
-moment_graph, pr_value = compute_moment_pagerank(
-    G, node_name, topic, polarity, pr_alpha, beta_a, beta_b, moment_time, attention_window, verbose=True)
+# moment_graph, pr_value = compute_moment_pagerank(
+#     G, node_name, topic, polarity, pr_alpha, beta_a, beta_b, moment_time, attention_window, verbose=True)
 
 
 # draw_graph(moment_graph, prog="neato", node_label=False, edge_label=False, pr_value=pr_value)
@@ -346,15 +343,17 @@ obsr_list = [f"u{u}" for u in df_users[df_users["isObserver"] == "t"]["id"]]
 
 # from multiprocessing import Pool
 
-def short_compute_pagerank(n, t, topic, polar):
+def short_compute_pagerank(n, t, topic, polar, pr_alpha, beta_a, beta_b):
     g, pr = compute_moment_pagerank(
-        G, n, topic, polar, pr_alpha, beta_a, beta_b, t, attention_window)
-    return {"graph": describe_graph(g), "pr": pr}
+        G, n, topic, polar, pr_alpha, beta_a, beta_b, timeline[t], attention_window)
+    subg = g.copy()
+    subg.remove_nodes_from([n for n in subg if n[0] == "v"])
+    return {"full_graph": describe_graph(g), "exps_graph": describe_graph(subg), "pr": pr}
 
 
 def do_params(pr_alpha, beta_a, beta_b):
-    keyq = [(node_name, t, topic, polar)
-            for node_name in obsr_list for t in timeline[1:] for topic in range(8) for polar in [0, 2]
+    keyq = [(node_name, t, topic, polar, pr_alpha, beta_a, beta_b)
+            for node_name in obsr_list for t in range(1, 6) for topic in range(8) for polar in [0, 2]
             ]
     print(f"jobs: {len(keyq)}")
 
@@ -369,10 +368,25 @@ if __name__ == "__main__":
     parser.add_argument("--pr", "-p", type=float, default=0.9)
     parser.add_argument("--ba", "-a", type=float, default=0.5)
     parser.add_argument("--bb", "-b", type=float, default=0.5)
-    args = parser.parse_args()
-    print(args)
-    d = do_params(pr_alpha=args.pr, beta_a=args.ba, beta_b=args.bb)
 
-    path = Path(f"res/pagerank/{args.pr}-{args.ba}-{args.bb}.pkl")
-    with open(path, "wb") as fp:
-        pickle.dump(d, fp)
+    parser.add_argument("--gen", type=lambda x: x.lower() == "true", default=False)
+    parser.add_argument("--graph", type=lambda x: x.lower() == "true", default=False)
+    args = parser.parse_args()
+
+    print(args)
+
+    if args.gen:
+        cmds = [f"python compute_pr.py -p {p} -a {a} -b {b}"
+                for p in [0.9, 0.7, 0.5, 0.3, 0.1]
+                for a in [0.5, 0.9, 0.7, 0.3, 0.1]
+                for b in [0.5, 0.9, 0.7, 0.3, 0.1]
+                ]
+        script = "\n".join(cmds)
+        with open("./pr_script.sh", "w") as fp:
+            fp.write(script)
+    else:
+        d = do_params(pr_alpha=args.pr, beta_a=args.ba, beta_b=args.bb)
+
+        path = Path(f"res/pagerank/{args.pr}-{args.ba}-{args.bb}.pkl")
+        with open(path, "wb") as fp:
+            pickle.dump(d, fp)
