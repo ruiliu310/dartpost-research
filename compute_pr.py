@@ -12,7 +12,6 @@ from scipy.stats import beta
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# from tqdm.notebook import tqdm
 from tqdm import tqdm
 import argparse
 import pickle
@@ -89,6 +88,10 @@ df_comts = df_comts.merge(df_annot_comts[["comment_id", "majority_topic_label",
 
 # ### create influence grap
 
+post_comments = {f"p{p}": [] for p in df_posts["PostID"].values}
+for c, p in df_comts[["id", "PostId"]].values:
+    if f"p{p}" in post_comments:
+        post_comments[f"p{p}"].append(f"c{c}")
 
 G = nx.DiGraph()
 for u, uname, obsr, sock in df_users[["id", "username", "isObserver", "isPuppet"]].values:
@@ -108,7 +111,7 @@ for c, u, p, t, polar, score, topic in df_comts[["id", "CommenterId", "PostId", 
     if f"u{u}" in G.nodes and f"p{p}" in G.nodes:
         G.add_node(f"c{c}", id=c, kind="comt", time=t, user=u, polar=polar, score=score, topic=topic)
         G.add_edge(f"c{c}", f"p{p}", kind="known", time=t, weight=1)
-        G.add_edge(f"p{p}", f"c{c}", kind="known", time=t, weight=1)
+        # G.add_edge(f"p{p}", f"c{c}", kind="known", time=t, weight=1)
 
 for l, u, p, t in df_likes[["id", "UserId", "PostId", "createdAt"]].values:
     if f"u{u}" in G.nodes and f"p{p}" in G.nodes:
@@ -117,24 +120,35 @@ for l, u, p, t in df_likes[["id", "UserId", "PostId", "createdAt"]].values:
         G.add_edge(f"u{u}", f"l{l}", time=t, weight=1, kind="infer")
         G.add_edge(f"l{l}", f"p{p}", time=t, weight=1, kind="known")
 
-for u, p, t, v in df_views[["UserId", "PostId", "createdAt", "id"]].values:
+for u, p, t, v, s in df_views[["UserId", "PostId", "createdAt", "id", "singleView"]].values:
     if f"u{u}" in G.nodes and f"p{p}" in G.nodes:
         G.add_node(f"v{v}", user=f"u{u}", post=f"p{p}", time=t, id=v, kind="view",
                    topic=G.nodes[f"p{p}"]["topic"], polar=G.nodes[f"p{p}"]["polar"], score=1)
         G.add_edge(f"u{u}", f"v{v}", time=t, weight=1, kind="infer")
-        G.add_edge(f"v{v}", f"p{p}", time=t, weight=1, kind="known")
+        G.add_edge(f"v{v}", f"p{p}", time=t, weight=1, kind="infer")
+        if s == "t":
+            for c in post_comments[f"p{p}"]:
+                if c in G.nodes:
+                    G.add_edge(f"v{v}", c, time=t, weight=1, kind="infer")
 
 
 user_view = {u: set() for u in G if u[0] == "u"}
-for u, p, t, v in df_views[["UserId", "PostId", "createdAt", "id"]].values:
-    if f"u{u}" in G.nodes and f"p{p}" in G.nodes:
+for u, p, t, v, s in df_views[["UserId", "PostId", "createdAt", "id", "singleView"]].values:
+    if f"u{u}" in G.nodes and f"p{p}" in G.nodes and s != "t":
         user_view[f"u{u}"].add(f"v{v}")
 
+single_view = {u: set() for u in G if u[0] == "u"}
+for u, p, t, v, s in df_views[["UserId", "PostId", "createdAt", "id", "singleView"]].values:
+    if f"u{u}" in G.nodes and f"p{p}" in G.nodes and s == "t":
+        single_view[f"u{u}"].add(f"v{v}")
+
+print(f"user view: {sum([len(user_view[u]) for u in user_view])}")
+print(f"single view: {sum([len(single_view[u]) for u in single_view])}")
 
 for p in tqdm(G):
-    if p[0] == "p":
+    if p[0] in ["p", "c"]:
         u = f"u{G.nodes[p]['user']}"
-        for v in user_view[u]:
+        for v in user_view[u] | single_view[u]:
             if G.nodes[v]["time"] <= G.nodes[p]["time"]:
                 G.add_edge(p, v, time=G.nodes[v]["time"], weight=1, kind="infer")
 
@@ -377,7 +391,7 @@ if __name__ == "__main__":
 
     if args.gen:
         cmds = [f"python compute_pr.py -p {p} -a {a} -b {b}"
-                for p in [0.9, 0.7, 0.5, 0.3, 0.1]
+                for p in [0.85, 0.9, 0.7, 0.5, 0.3, 0.1]
                 for a in [0.5, 0.9, 0.7, 0.3, 0.1]
                 for b in [0.5, 0.9, 0.7, 0.3, 0.1]
                 ]
