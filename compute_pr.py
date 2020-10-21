@@ -330,7 +330,7 @@ def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, bet
     if verbose:
         print(f"nodes {len(moment_graph)}, edges: {len(moment_graph.edges)} <- remove isolates")
 
-    beta_rv = beta(a=0.5, b=0.5)
+    beta_rv = beta(a=beta_a, b=beta_b)
 
     for node in moment_graph:
         elist = sorted(moment_graph.out_edges(node), key=lambda e: G.edges[e]["time"])
@@ -340,7 +340,7 @@ def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, bet
         for e, w in zip(elist, y):
             moment_graph.edges[e]["weight"] = w
 
-    pr_value = nx.pagerank_numpy(moment_graph, alpha=pr_alpha, weight="weight")
+    pr_value = nx.pagerank_scipy(moment_graph, alpha=pr_alpha, weight="weight")
 
     return moment_graph, pr_value
 
@@ -387,20 +387,20 @@ if __name__ == "__main__":
     parser.add_argument("--graph", type=lambda x: x.lower() == "true", default=False)
     args = parser.parse_args()
 
+    path = Path(f"res/pagerank/{args.pr}-{args.ba}-{args.bb}.pkl")
     print(args)
 
     if args.gen:
         cmds = [f"python compute_pr.py -p {p} -a {a} -b {b}"
-                for p in [0.85, 0.9, 0.7, 0.5, 0.3, 0.1]
+                for p in [0.9, 0.85, 0.7, 0.5, 0.3, 0.1]
                 for a in [0.5, 0.9, 0.7, 0.3, 0.1]
                 for b in [0.5, 0.9, 0.7, 0.3, 0.1]
                 ]
         script = "\n".join(cmds)
         with open("./pr_script.sh", "w") as fp:
             fp.write(script)
-    else:
+    elif not path.exists():
+        print(f"output to {path}")
         d = do_params(pr_alpha=args.pr, beta_a=args.ba, beta_b=args.bb)
-
-        path = Path(f"res/pagerank/{args.pr}-{args.ba}-{args.bb}.pkl")
         with open(path, "wb") as fp:
             pickle.dump(d, fp)
