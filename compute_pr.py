@@ -159,8 +159,6 @@ for p in tqdm(G):
 up = [(G.nodes[n]["user"], G.nodes[n]["post"]) for n in G.nodes if n[0] == "v"]
 
 print(f"{len(up)} {len(set(up))} {len(up)/len(set(up))}")
-
-
 print(f"{len(G)} {len(G.edges)}")
 
 
@@ -295,7 +293,8 @@ attention_window = pd.Timedelta("1 day")
 # print(f"{attention_window}, {moment_time}")
 
 
-def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, beta_b, moment_time, attention_window, verbose=False):
+def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, beta_b,
+                            moment_time, attention_window, verbose=False):
     moment_nodes = [n for n in nx.descendants(G, node_name)
                     if G.nodes[n]["topic"] == topic and G.nodes[n]["polar"] == polarity] + [node_name]
 
@@ -355,8 +354,6 @@ def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, bet
 obsr_list = [f"u{u}" for u in df_users[df_users["isObserver"] == "t"]["id"]]
 
 
-# from multiprocessing import Pool
-
 def short_compute_pagerank(n, t, topic, polar, pr_alpha, beta_a, beta_b):
     g, pr = compute_moment_pagerank(
         G, n, topic, polar, pr_alpha, beta_a, beta_b, timeline[t], attention_window)
@@ -393,8 +390,10 @@ if __name__ == "__main__":
     if args.gen:
         cmds = [f"python compute_pr.py -p {p} -a {a} -b {b}"
                 for p in [0.9, 0.85, 0.7, 0.5, 0.3, 0.1]
-                for a in [0.5, 0.9, 0.7, 0.3, 0.1]
-                for b in [0.5, 0.9, 0.7, 0.3, 0.1]
+                for a in [0.5, 1, 1.5, 2]
+                for b in [0.5, 1, 1.5, 2]
+                # for a in [0.5, 0.9, 0.7, 0.3, 0.1]
+                # for b in [0.5, 0.9, 0.7, 0.3, 0.1]
                 ]
         script = "\n".join(cmds)
         with open("./pr_script.sh", "w") as fp:
