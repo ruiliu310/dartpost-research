@@ -344,6 +344,14 @@ def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha, beta_a, bet
     return moment_graph, pr_value
 
 
+def compute_fig2(moment_graph):
+    ts = [moment_graph.nodes[n]["time"].value for n in moment_graph.nodes]
+    mean_ie = pd.Timestamp(np.mean(ts), tz="utc")
+    std_ie = pd.Timedelta(np.std(ts))
+    fig2_value = {n: np.abs(moment_graph.nodes[n]["time"] - mean_ie)/std_ie for n in moment_graph.nodes}
+
+    return fig2_value
+
 # moment_graph, pr_value = compute_moment_pagerank(
 #     G, node_name, topic, polarity, pr_alpha, beta_a, beta_b, moment_time, attention_window, verbose=True)
 
@@ -374,20 +382,37 @@ def do_params(pr_alpha, beta_a, beta_b):
     return dict(zip(keyq, valueq))
 
 
+def short_compute_fig2(n, t, topic, polar):
+    g, pr = compute_moment_pagerank(
+        G, n, topic, polar, 0.9, 0.5, 0.5, timeline[t], attention_window)
+    fig2_value = compute_fig2(g)
+    return {"fig2": fig2_value}
+
+
+def do_fig2():
+    keyq = [(node_name, t, topic, polar)
+            for node_name in obsr_list for t in range(1, 6) for topic in range(8) for polar in [0, 2]
+            ]
+    print(f"jobs: {len(keyq)}")
+
+    pool = Pool(30)
+    valueq = pool.starmap(func=short_compute_fig2, iterable=tqdm(keyq), chunksize=1)
+    return dict(zip(keyq, valueq))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--pr", "-p", type=float, default=0.9)
     parser.add_argument("--ba", "-a", type=float, default=0.5)
     parser.add_argument("--bb", "-b", type=float, default=0.5)
 
-    parser.add_argument("--gen", type=lambda x: x.lower() == "true", default=False)
-    parser.add_argument("--graph", type=lambda x: x.lower() == "true", default=False)
+    # parser.add_argument("--gen", type=lambda x: x.lower() == "true", default=False)
+    parser.add_argument("--mode", "-m", type=str, default="pr", choices=["pr", "fig2", "gen"])
     args = parser.parse_args()
 
-    path = Path(f"res/pagerank/{args.pr}-{args.ba}-{args.bb}.pkl")
     print(args)
 
-    if args.gen:
+    if args.mode == "gen":
         cmds = [f"python compute_pr.py -p {p} -a {a} -b {b}"
                 for p in [0.9, 0.85, 0.7, 0.5, 0.3, 0.1]
                 for a in [0.5, 1, 1.5, 2]
@@ -398,8 +423,19 @@ if __name__ == "__main__":
         script = "\n".join(cmds)
         with open("./pr_script.sh", "w") as fp:
             fp.write(script)
-    elif not path.exists():
-        print(f"output to {path}")
-        d = do_params(pr_alpha=args.pr, beta_a=args.ba, beta_b=args.bb)
-        with open(path, "wb") as fp:
-            pickle.dump(d, fp)
+    elif args.mode == "pr":
+        path = Path(f"res/pagerank/{args.pr}-{args.ba}-{args.bb}.pkl")
+        if not path.exists():
+            print(f"output to {path}")
+            d = do_params(pr_alpha=args.pr, beta_a=args.ba, beta_b=args.bb)
+            with open(path, "wb") as fp:
+                pickle.dump(d, fp)
+    elif args.mode == "fig2":
+        path = Path("res/pagerank/fig2.pkl")
+        if not path.exists():
+            print(f"output to {path}")
+            d = do_fig2()
+            with open(path, "wb") as fp:
+                pickle.dump(d, fp)
+    else:
+        print(f"{args.mode} not valid")
