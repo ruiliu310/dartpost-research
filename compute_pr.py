@@ -348,7 +348,11 @@ def compute_fig2(moment_graph):
     ts = [moment_graph.nodes[n]["time"].value for n in moment_graph.nodes]
     mean_ie = pd.Timestamp(np.mean(ts), tz="utc")
     std_ie = pd.Timedelta(np.std(ts))
-    fig2_value = {n: np.abs(moment_graph.nodes[n]["time"] - mean_ie)/std_ie for n in moment_graph.nodes}
+    if len(moment_graph) > 1:
+        fig2_value = {n: np.abs(moment_graph.nodes[n]["time"] - mean_ie)/std_ie
+                      for n in moment_graph.nodes}
+    else:
+        fig2_value = {n: 1 for n in moment_graph.nodes}
 
     return fig2_value
 
@@ -383,7 +387,7 @@ def do_params(pr_alpha, beta_a, beta_b):
 
 
 def short_compute_fig2(n, t, topic, polar):
-    g, pr = compute_moment_pagerank(
+    g, _ = compute_moment_pagerank(
         G, n, topic, polar, 0.9, 0.5, 0.5, timeline[t], attention_window)
     fig2_value = compute_fig2(g)
     return {"fig2": fig2_value}
