@@ -329,7 +329,7 @@ def compute_moment_pagerank(G, node_name, topic, polarity, pr_alpha,
     if verbose:
         print(f"nodes {len(moment_graph)}, edges: {len(moment_graph.edges)} <- remove isolates")
 
-    beta_rv = beta(a=beta_a, b=beta_b)
+    # beta_rv = beta(a=beta_a, b=beta_b)
 
     # for node in moment_graph:
     #   elist = sorted(moment_graph.out_edges(node), key=lambda e: G.edges[e]["time"])
