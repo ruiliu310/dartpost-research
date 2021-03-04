@@ -1,5 +1,3 @@
-# output latex 
-
 # get local directory from bash 
 argv <- getwd()
 setwd(argv)
